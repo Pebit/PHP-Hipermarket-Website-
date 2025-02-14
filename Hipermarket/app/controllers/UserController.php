@@ -5,10 +5,25 @@ class UserController{
     public static function index() {
         try{
             $users = User::getAllUsers();
+            $read_permission = (
+                isset($_SESSION["request_user"])  &&
+                User::hasPermission($_SESSION["request_user"]["user_id"], "read_user")
+            );
+            $create_permission = (
+                isset($_SESSION["request_user"])  &&
+                User::hasPermission($_SESSION["request_user"]["user_id"], "create_user")
+            );
+            $update_permission = (
+                isset($_SESSION["request_user"])  &&
+                User::hasPermission($_SESSION["request_user"]["user_id"], "update_user")
+            );
+            $delete_permission = (
+                isset($_SESSION["request_user"])  &&
+                User::hasPermission($_SESSION["request_user"]["user_id"], "delete_user")
+            );
             require_once "app/views/users/index.php";
         } catch (Exception $e){
             $_SESSION['error'] = "Error fetching users: " . $e->getMessage();
-            echo("problema in UserController.php");
             require_once "app/views/404.php";
         }
     }
@@ -49,7 +64,23 @@ class UserController{
     }
 
     public static function edit(){
+        // daca se apasa pe edit in fila html/php si userul conectat nu are permisiuni atunci va fi trimis pe pagina 404 
+        if (!isset($_SESSION["request_user"]) || !User::hasPermission($_SESSION["request_user"]["user_id"], "update_user")){
+            $_SESSION["error"]= "Invalid permissions";
+            require_once "app/views/404.php";
+            return;
+        }
+
         $user_id = $_GET['user_id'] ? $_GET['user_id'] : $_POST['user_id'];
+
+        // daca userul incearca sa editeze un alt user inafara de el insusi va fi trimis dinnou pe pagina 404 (exceptie adiminii).
+        $role = UserRole::getRole($_SESSION["request_user"]["role_id"]);
+        if ($role["name"] != "admin" && $user_id != $_SESSION["request_user"]["user_id"]){
+                $_SESSION["error"]= "Invalid permissions";
+                require_once "app/views/404.php";
+                return;
+            }
+        
         $user = User::getUser($user_id);
 
         if (!$user) {
@@ -87,7 +118,22 @@ class UserController{
     }
 
     public static function delete() {
+        // daca userul nu este loggat sau nu are permisiunea de a sterge, atunci 404
+        if (!isset($_SESSION["request_user"]) || 
+            !User::hasPermission($_SESSION["request_user"]["user_id"], "delete_user")
+        ){
+            $_SESSION["error"]= "Invalid permissions";
+            require_once "app/views/404.php";
+            return;
+        }
+
         $user_id = $_GET["user_id"];
+
+        if($_SESSION["request_user"]["role_id"] != 1 && $_SESSION["request_user"]["user_id"] != $user_id){
+            $_SESSION["error"]= "Invalid permissions";
+            require_once "app/views/404.php";
+            return;
+        }
 
         User::deleteUser($user_id);
 
@@ -95,6 +141,11 @@ class UserController{
         return;
     }
     public static function create() {
+        // if (!isset($_SESSION["request_user"])){
+        //     header("Location: /Site%20Hipermarket(1)/Hipermarket");
+        // }
+
+
         if (isset($_POST["is_post"])){
             // POST => create user
             $_SESSION["create_user"]["user"] = $_POST;
@@ -114,7 +165,10 @@ class UserController{
                 $pass,
                 htmlentities($_POST["role_id"])
             );
-            header("Location: index");
+            if (isset($_SESSION["request_user"]["role_id"]) && $_SESSION["request_user"]["role_id"] == 1)
+                header("Location: index");
+            else
+                header("Location: http://localhost/Site%20Hipermarket(1)/Hipermarket/auth/login");
         }
         // GET => show form
         if (!isset($_SESSION["create_user"]["user"])){
@@ -125,6 +179,11 @@ class UserController{
             ];
         }
         $roles  = UserRole::getAllRoles();
+        foreach ($roles as $role){
+            if ($role["name"] == "user"){
+                $user_id = $role["role_id"];
+            }
+        }
         require_once "app/views/users/create.php";
     }
 }

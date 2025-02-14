@@ -59,6 +59,6 @@
         </p>
         <input type="submit" value="Create" style="background:green">
     </form>
-    <button style="background:orange"><a href="index" style="color:white">Back</a></button>
+    <a href="index" style="color:white"><div><button style="background:orange">Back</div></a>
 </body>
 </html>

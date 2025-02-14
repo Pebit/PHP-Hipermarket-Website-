@@ -27,6 +27,16 @@ class User {
             return false;
         }
     }
+    public static function getUserByEmail($email) {
+        global $pdo;
+
+        $sql = "SELECT *
+                FROM users 
+                WHERE email = :email";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute(array(":email" => $email));
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
     public static function updateUser($user_id, $first_name, $last_name, $email) {
         global $pdo;
 
@@ -67,6 +77,22 @@ class User {
         ));
     }
 
+    public static function hasPermission($user_id, $permission_name){
+        global $pdo;
+        $sql = "SELECT count(*) as count
+                FROM users us
+                JOIN roles_permissions rp on us.role_id = rp.role_id
+                JOIN permissions p on  rp.permission_id = p.permission_id
+                WHERE us.user_id=:user_id and p.name = :permission_name";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute(array(
+                        ":user_id" => $user_id, 
+                        ":permission_name"=>$permission_name
+                    ));
+        $res = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $res["count"] > 0;
+    }
+
 }
 class UserRole {
     public static function getAllRoles() {
@@ -87,7 +113,5 @@ class UserRole {
         $stmt->execute(array(":role_id" => $role_id));
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
-
-    
 }
 ?>

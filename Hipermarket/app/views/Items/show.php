@@ -12,7 +12,7 @@
     <p>Expiration Date: <?= $item["expiration_date"] ?></p>
     <p>price: <?= $item["price"] ?> </p>
     <p>stock: <?= $item["stock"] ?></p>
-    <a href="edit?item_id=<?= $item["item_id"] ?>">Edit</a>
-    <button style="background:orange"><a href="index" style="color:white">Back</a></button>
+    <?php if ($update_permission): ?> <a href="edit?item_id=<?= $item["item_id"] ?>" style="color:white"><div><button>Edit</div></a><?php endif; ?>
+    <a href="index" style="color:white"><div><button style="background:orange">Back</div></a>
 </body>
 </html>

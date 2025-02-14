@@ -10,11 +10,17 @@ $routes = [
     "Site%20Hipermarket(1)/Hipermarket/users/show" => ["UserController", "show"],
     "Site%20Hipermarket(1)/Hipermarket/users/edit" => ["UserController", "edit"],
     "Site%20Hipermarket(1)/Hipermarket/users/create" => ["UserController", "create"],
-    "Site%20Hipermarket(1)/Hipermarket/users/delete" => ["UserController", "delete"]
-    
+    "Site%20Hipermarket(1)/Hipermarket/users/delete" => ["UserController", "delete"],
+
+    "Site%20Hipermarket(1)/Hipermarket/purchases/index" => ["PurchaseController", "index"],
+    "Site%20Hipermarket(1)/Hipermarket/purchases/add_to_cart" => ["PurchaseController", "add_to_cart"],
+    "Site%20Hipermarket(1)/Hipermarket/purchases/show" => ["PurchaseController", "show"],
+    "Site%20Hipermarket(1)/Hipermarket/purchases/finish" => ["PurchaseController", "finish"],
+
     "Site%20Hipermarket(1)/Hipermarket/auth/login" => ["AuthController", "login"],
+    "Site%20Hipermarket(1)/Hipermarket/auth/guest_login" => ["AuthController", "guest_login"],
     "Site%20Hipermarket(1)/Hipermarket/auth/logout" => ["AuthController", "logout"],
-    "Site%20Hipermarket(1)/Hipermarket" => ["AuthController", "landing_page"],
+    "Site%20Hipermarket(1)/Hipermarket" => ["AuthController", "landing_page"]
 ];
 
 class Router {
@@ -39,7 +45,6 @@ class Router {
             // Call the method
             return $controller::$method();
         }
-        echo ("ruta nu a fost gasita");
         require_once "app/views/404.php";
     }
 }

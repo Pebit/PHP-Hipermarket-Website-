@@ -1,11 +1,34 @@
 <?php
+require_once "app/models/User.php";
 require_once "app/models/Item.php";
 
 class ItemController{
     public static function index() {
         try{
-            $items = Item::getAllItems();
-            require_once "app/views/Items/index.php";
+            $create_permission = (
+                isset($_SESSION["request_user"])  &&
+                User::hasPermission($_SESSION["request_user"]["user_id"], "create_item")
+            );
+            $update_permission = (
+                isset($_SESSION["request_user"])  &&
+                User::hasPermission($_SESSION["request_user"]["user_id"], "update_item")
+            );
+            $delete_permission = (
+                isset($_SESSION["request_user"])  &&
+                User::hasPermission($_SESSION["request_user"]["user_id"], "delete_item")
+            );
+            $purchase_permission = (
+                isset($_SESSION["request_user"])  &&
+                User::hasPermission($_SESSION["request_user"]["user_id"], "purchase_item")
+            );
+
+            if(isset($_SESSION["request_user"]) && $_SESSION["request_user"]["role_id"] == 1){
+                $items = Item::getAllItems();
+                require_once "app/views/Items/index.php";
+            }else {
+                $items = Item::getAllUnexpiredItems();
+                require_once "app/views/Items/index.php";
+            }
         } catch (Exception $e){
             $_SESSION['error'] = "Error fetching items: " . $e->getMessage();
             echo("problema in ItemController.php"); 
@@ -18,7 +41,11 @@ class ItemController{
         $item = Item::getItem($item_id);
 
         if ($item) {
-            //require_once "app/views/items/show.php";
+            $update_permission = (
+                isset($_SESSION["request_user"])  &&
+                User::hasPermission($_SESSION["request_user"]["user_id"], "update_item")
+            );
+            require_once "app/views/items/show.php";
         } else {
             $_SESSION['error'] = "Item not found";
             require_once "app/views/404.php";
@@ -58,6 +85,12 @@ class ItemController{
     }
 
     public static function edit(){
+        if (!isset($_SESSION["request_user"]) || !User::hasPermission($_SESSION["request_user"]["user_id"], "update_item")){
+            $_SESSION["error"]= "Invalid permissions";
+            require_once "app/views/404.php";
+            return;
+        }
+
         $item_id = $_GET['item_id'] ? $_GET['item_id'] : $_POST['item_id'];
         $item = Item::getItem($item_id);
 
@@ -96,6 +129,11 @@ class ItemController{
         }
     }
     public static function create() {
+        if (!isset($_SESSION["request_user"]) || !User::hasPermission($_SESSION["request_user"]["user_id"], "create_item")){
+            $_SESSION["error"]= "Invalid permissions";
+            require_once "app/views/404.php";
+            return;
+        }
         if (isset($_POST["is_post"])){
             // POST => create item
             $_SESSION["create_item"]["item"] = $_POST;
@@ -126,6 +164,11 @@ class ItemController{
         require_once "app/views/items/create.php";
     }
     public static function delete() {
+        if (!isset($_SESSION["request_user"]) || !User::hasPermission($_SESSION["request_user"]["user_id"], "delete_item")){
+            $_SESSION["error"]= "Invalid permissions";
+            require_once "app/views/404.php";
+            return;
+        }
         $item_id = $_GET["item_id"];
 
         item::deleteItem($item_id);

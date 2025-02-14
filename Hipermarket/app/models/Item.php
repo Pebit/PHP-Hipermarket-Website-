@@ -4,7 +4,23 @@ class Item {
         global $pdo;
         try {
             $sql = "SELECT *
-                    FROM items";
+                    FROM items
+                    ORDER BY expiration_date ASC";
+            $stmt = $pdo->query($sql);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Database query error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    public static function getAllUnexpiredItems() {
+        global $pdo;
+        try {
+            $sql = "SELECT *
+                    FROM items
+                    WHERE expiration_date > CURDATE()
+                    ORDER BY item_name ASC";
             $stmt = $pdo->query($sql);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
@@ -84,4 +100,65 @@ class Item {
         }
     }    
 }
+class Sold_Item {
+    public static function createSold_Item($item_id, $purchase_id, $amount) {
+        global $pdo;
+
+        $sql = "INSERT INTO sold_items (item_id, purchase_id, amount)
+                VALUES (:item_id, :purchase_id, :amount)";
+        $stmt = $pdo->prepare($sql);
+
+        $stmt->execute(array(
+            ":item_id" => $item_id,
+            ":purchase_id" => $purchase_id,
+            ":amount" => $amount
+        ));
+    }
+
+    public static function updateSold_Item($item_id, $purchase_id, $amount) {
+        global $pdo;
+
+        $sql = "UPDATE sold_items
+                SET amount = :amount
+                WHERE item_id = :item_id AND purchase_id = :purchase_id";
+        $stmt = $pdo->prepare($sql);
+        
+        $stmt->execute(array(
+            ":item_id" => $item_id,
+            ":purchase_id" => $purchase_id,
+            ":amount" => $amount
+        ));
+    }
+
+    public static function deleteSold_Item($item_id, $purchase_id) {
+        global $pdo;
+
+        $sql = "DELETE FROM sold_items
+                WHERE item_id = :item_id AND purchase_id = :purchase_id";
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute(array(
+            ":item_id" => $item_id,
+            ":purchase_id" => $purchase_id
+        ));
+    }
+
+    public static function getPurchaseSold_Items($purchase_id) {
+        try {
+            global $pdo;
+
+            $sql = "SELECT * 
+                    FROM sold_items 
+                    WHERE purchase_id = :purchase_id";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute(array(":purchase_id" => $purchase_id));
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch(PDOException $e){
+            error_log("Database query error: " . $e->getMessage());
+            return false;
+        }
+    }
+}
+
 ?>
+

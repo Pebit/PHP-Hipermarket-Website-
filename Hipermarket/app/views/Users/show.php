@@ -12,7 +12,7 @@
     <p>Last Name: <?= $user["last_name"] ?></p>
     <p>Credits: <?= $user["credits"] ?> </p>
     <p>Email: <?= $user["email"] ?></p>
-    <a href="edit?user_id=<?= $user["user_id"] ?>">Edit</a>
-    <button style="background:orange"><a href="index" style="color:white">Back</a></button>
+    <a href="edit?user_id=<?= $user["user_id"] ?>" style="color:white"><div><button>Edit</div></a>
+    <a href="index" style="color:white"><div><button style="background:orange">Back</div></a>
 </body>
 </html>

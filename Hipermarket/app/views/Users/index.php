@@ -8,7 +8,10 @@
 </head>
 <body>
 <h1>All Users</h1>
-<button><a href="create" style="color:white">Create</a></button>
+<?php  if ($create_permission){
+    echo ("<a href=\"create\" style=\"color:white\"><div><button style=\"background:green\">Create</div></a>");
+}
+?>
 <table>
     <tr>
         <th>First Name</th>
@@ -24,12 +27,19 @@
             <td><?= $user["email"] ?></td>
             <td><?= $user["credits"]?></td>
             <td>
-                <a href="show?user_id=<?= $user["user_id"] ?>">Show</a> |
-                <a href="edit?user_id=<?= $user["user_id"] ?>">Edit</a> |
-                <a href="delete?user_id=<?= $user["user_id"] ?>">Delete</a>
+                <?php if(isset($_SESSION["request_user"]) && $_SESSION["request_user"]["role_id"] == 1): ?>
+                    <a href="purchases/index?user_id=<?= $user["user_id"] ?>">Purchases</a><?php endif; ?>
+                <?php if ($read_permission): ?>| <a href="show?user_id=<?= $user["user_id"] ?>">Show</a><?php endif; ?>
+                <?php if ($update_permission && isset($_SESSION["request_user"]) && $_SESSION["request_user"]["user_id"] == $user["user_id"] || (isset($_SESSION["request_user"]) && $_SESSION["request_user"]["role_id"] == 1)): ?> 
+                    <?php if ($user["email"] != "admin@admin.com"): ?> 
+                        | <a href="edit?user_id=<?= $user["user_id"] ?>">Edit</a><?php endif; ?><?php endif; ?>
+                <?php if ($delete_permission && isset($_SESSION["request_user"]) && $_SESSION["request_user"]["user_id"] == $user["user_id"] ||(isset($_SESSION["request_user"]) && $_SESSION["request_user"]["role_id"] == 1)): ?> 
+                    <?php if ($user["email"] != "admin@admin.com" && $user["email"] != "guest@guest.com"): ?>
+                        | <a href="delete?user_id=<?= $user["user_id"] ?>">Delete</a><?php endif; ?><?php endif; ?>
             </td>
         </tr>
     <?php endforeach; ?>
 </table>
+<a href="http://localhost/Site%20Hipermarket(1)/Hipermarket" style="color:white"><div><button style="background:orange">Back</div></a>
 </body>
 </html>

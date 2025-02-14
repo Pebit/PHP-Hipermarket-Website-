@@ -59,13 +59,21 @@
 
         <p><label for="role">Role</label>
             <select name="role_id" id="role_id">
+            <?php if (isset($_SESSION["request_user"]["role_id"]) && $_SESSION["request_user"]["role_id"] == 1): ?>
                 <?php foreach ($roles as $role) : ?>
-                    <option value="<?= $role['role_id'] ?>"><?= $role['name'] ?></option>
+                    <option value="<?= $role['role_id'] ?>"><?= htmlspecialchars($role['name']) ?></option>
                 <?php endforeach; ?>
+            <?php else: ?>
+                <option value="<?=$user_id?>" selected> user </option>
+            <?php endif; ?>
             </select>
         </p>
         <input type="submit" value="Create" style="background:green">
     </form>
-    <button style="background:orange"><a href="index" style="color:white">Back</a></button>
+    <?php if (isset($_SESSION["request_user"]["role_id"]) && $_SESSION["request_user"]["role_id"] == 1): ?>
+        <a href="index" style="color:white"><div><button style="background:orange">Back</div></a>
+    <?php else: ?>
+        <a href="http://localhost/Site%20Hipermarket(1)/Hipermarket" style="color:white"><div><button style="background:orange">Back</div></a>
+        <?php endif; ?>
 </body>
 </html>

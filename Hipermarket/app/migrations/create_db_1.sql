@@ -45,6 +45,7 @@ create table purchases (
     total_price DECIMAL(10,2),
     purchase_credits INTEGER DEFAULT 0,
     purchase_date DATE NOT NULL,
+    status BOOLEAN NOT NULL DEFAULT 0,
     FOREIGN KEY(user_id) REFERENCES users(user_id) ON DELETE CASCADE
     
 ) ENGINE=InnoDB CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -69,9 +70,9 @@ CREATE TABLE sold_items (
 ) ENGINE=InnoDB CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- insert the default roles
-INSERT INTO user_roles (name) VALUES ('admin');
-INSERT INTO user_roles (name) VALUES ('user');
-INSERT INTO user_roles (name) VALUES ('guest');
+INSERT INTO user_roles (role_id, name) VALUES (1, 'admin');
+INSERT INTO user_roles (role_id, name) VALUES (2, 'user');
+INSERT INTO user_roles (role_id, name) VALUES (3, 'guest');
 
 -- insert the default items
 INSERT INTO items (item_name, price) VALUES ('store_credit', -0.05);

@@ -14,6 +14,7 @@ $routes = [
 
     "Site%20Hipermarket(1)/Hipermarket/purchases/index" => ["PurchaseController", "index"],
     "Site%20Hipermarket(1)/Hipermarket/purchases/add_to_cart" => ["PurchaseController", "add_to_cart"],
+    "Site%20Hipermarket(1)/Hipermarket/purchases/remove_from_cart" => ["PurchaseController", "remove_from_cart"],
     "Site%20Hipermarket(1)/Hipermarket/purchases/show" => ["PurchaseController", "show"],
     "Site%20Hipermarket(1)/Hipermarket/purchases/finish" => ["PurchaseController", "finish"],
 

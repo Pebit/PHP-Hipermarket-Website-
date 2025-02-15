@@ -49,7 +49,7 @@ class Purchase {
             $sql = "SELECT *
                     FROM purchases
                     WHERE user_id = :user_id
-                    ORDER BY purchase_date DESC
+                    ORDER BY purchase_date DESC, status ASC
                     LIMIT 1";
             $stmt = $pdo->prepare($sql);
             $stmt->execute(array(":user_id" => $user_id));

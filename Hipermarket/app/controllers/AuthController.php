@@ -1,6 +1,6 @@
 <?php
 require_once "app/models/User.php";
-
+require_once "app/models/Purchase.php";
 class AuthController {
     public static function login(){
         if (isset($_SESSION["request_user"])){
@@ -39,6 +39,11 @@ class AuthController {
         } else {
             // login successful
             $_SESSION["request_user"] = $user;
+            $purchase = Purchase::getUserLastPurchase($user["user_id"]);
+            
+            if (isset($purchase) && $purchase["status"] == 0){
+                $_SESSION["create_purchase"]["purchase"] = $purchase;
+            }
             header("Location: /Site%20Hipermarket(1)/Hipermarket");
         }
     }

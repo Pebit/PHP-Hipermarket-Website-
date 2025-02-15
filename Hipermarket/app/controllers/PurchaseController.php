@@ -3,6 +3,7 @@ require_once "app/models/Purchase.php";
 require_once "app/models/Item.php";
 class PurchaseController{
     public static function index() {
+        $return_url = isset($_POST["return_url"]) ? $_POST["return_url"] : "http://localhost/Site%20Hipermarket(1)/Hipermarket";
         if (isset($_GET['user_id']) && isset($_SESSION["request_user"]) && $_SESSION["request_user"]["user_id"] == $_GET['user_id']){
             // user looking at their own purchases
             $user_id = $_GET['user_id'];
@@ -12,8 +13,9 @@ class PurchaseController{
                 if ($purchases) {
                     require_once "app/views/users/purchases/user_index.php";
                 } else {
-                    $_SESSION['error'] = "User purchases not found";
-                    require_once "app/views/404.php";
+                    $no_purchases = "This user doesn't have any purchases";
+                    $return_url .= "?error=".urlencode($no_purchases)."&user_id=".urlencode($user_id);;
+                    header("Location:".$return_url);
                 }
             } else {
                 $_SESSION['error'] = "User not found";
@@ -28,8 +30,9 @@ class PurchaseController{
                 if ($purchases) {
                     require_once "app/views/users/purchases/user_index.php";
                 } else {
-                    $_SESSION['error'] = "User purchases not found";
-                    require_once "app/views/404.php";
+                    $no_purchases = "This user doesn't have any purchases";
+                    $return_url .= "?error=".urlencode($no_purchases)."&user_id=".urlencode($user_id);;
+                    header("Location:".$return_url);
                 }
             } else {
                 $_SESSION['error'] = "User not found";
@@ -40,6 +43,7 @@ class PurchaseController{
             $purchases = Purchase::getAllPurchases();
             require_once "app/views/users/purchases/index.php";
         } else {
+            // user trying to look at others' purchases
             $_SESSION['error'] = "Invalid permissions";
             require_once "app/views/404.php";
         }
@@ -204,12 +208,14 @@ class PurchaseController{
         if(!$item){
             // in cazul in care itemul a fost sters din baza de date cat timp dadeam browse atunci semnalam problema.
             // (nu sunt sigur daca am problema aceasta s-ar putea sa am deja on delete cascade si sa nu fie problema)
-            $item_id_errors["missing_error"][] = $sold_item["item_id"]." ".$item["item_name"]; 
+            $item_id_errors["missing_error"][] = $item["item_name"]; 
             return 0;
         }
         if ($item["stock"] < 0){
             // in cazul in care am ramas pe minus la iteme le punem inapoi in raft si semnalam eroarea.
-            $item_id_errors["amount_error"][] = $sold_item["item_id"]." ".$item["item_name"]; 
+            $available_amount = $item["stock"] + $sold_item["amount"]; 
+            // daca am ramas cu -1 iteme si am cumparat 3 iteme atunci putem maxim -1 + 3 = 2 iteme
+            $item_id_errors["amount_error"][] = $available_amount."x ".$item["item_name"];
             return 0;
         }
         return 1;
@@ -247,9 +253,16 @@ class PurchaseController{
     }
     
     public static function finish(){
+        $return_url = $_POST["return_url"];
         if (isset($_SESSION["create_purchase"])){
             $purchase = $_SESSION["create_purchase"]["purchase"];
             $sold_items = Sold_Item::getPurchaseSold_Items($purchase["purchase_id"]);
+            if(empty($sold_items))
+            {
+                $errors = "cannot finish an empty purchase";
+                header("Location: " . $return_url ."&error=".$errors);
+                return;
+            }
             //decrementam ammountul fiecaruia din baza de date
             foreach ($sold_items as $sold_item){
                 self::grab_from_shelf($sold_item);
@@ -263,23 +276,23 @@ class PurchaseController{
             
             if (isset($item_id_errors["missing_error"]))
             {
-                $_SESSION['error'] = "the following items are missing from the database: ";
+                $errors = "the following items are missing from the database: ";
                 foreach ($item_id_errors["missing_error"] as $error){
-                    $_SESSION['error'] = $_SESSION['error'].$error." ";
+                    $errors .= $error." ";
                 }
-                $_SESSION['error'] = $_SESSION['error']."\r\n If the problem persists, contact the site administrator.\r\n";
+                $errors = $errors."\r\n If the problem persists, contact the site administrator.\r\n";
             }
             if(isset($item_id_errors["amount_error"])){
-                $_SESSION['error'] = "the following items have run out of stock while you were browsing: ";
+                $errors = "Too many items, store's stock: ";
                 foreach ($item_id_errors["amount_error"] as $error){
-                    $_SESSION['error'] = $_SESSION['error'].$error." ";
+                    $errors = $errors.$error." ";
                 }
             }
             if(isset($item_id_errors["amount_error"]) || isset($item_id_errors["missing_error"])){
                 foreach ($sold_items as $sold_item){
                     self::put_back_on_shelf($sold_item);
                 }
-                require_once "app/views/404.php";
+                header("Location: " . $return_url ."&error=".$errors);
                 return;
             }
             // verificam costul final recalculand suma tuturor itemelor apartinand tranzactiei
@@ -308,37 +321,56 @@ class PurchaseController{
         }
     }
     public static function remove_from_cart(){
-        // de implementat scoaterea itemelor din cos
         $return_url = isset($_POST["return_url"]) ? $_POST["return_url"] : "http://localhost/Site%20Hipermarket(1)/Hipermarket/";
+        
         $c_amount = isset($_POST["current_amount"]) ? (int)($_POST["current_amount"]) : 0;
-        $rm_amount = $_POST["remove_amount"] ? (int)($_POST["remove_amount"]) : 0;
+        $rm_amount = isset($_POST["remove_amount"]) ? (int)($_POST["remove_amount"]) : 0;
         
         // gestionarea erorilor
-        if ($c_amount == 0 || $rm_amount == 0){
-            if ($c_amount == 0)
-                $error = "failed getting amount in cart (shows 0 items)";
-            else
-                $error = "amount chosen to be removed must be bigger than 0";
+        if ($c_amount == 0 || $rm_amount == 0 || $c_amount < $rm_amount) {
+            $_SESSION["cart_error"] = ($c_amount == 0) ? 
+                "Failed getting amount in cart (shows 0 items)" : 
+                (($c_amount < $rm_amount) ? "Amount chosen to be removed must be smaller than current amount" : 
+                "Amount chosen to be removed must be bigger than 0");
+        
             header("Location: " . $return_url);
             return;
         }
-        if ( $c_amount < $rm_amount ){
-            $error = "amount chosen to be removed must be smaller than current amount";
-            header("Location: " . $return_url);
-            return;
-        }
+        
         
         $item_id = $_POST["item_id"];
         $purchase = $_SESSION["create_purchase"]["purchase"];
         $new_amount = $c_amount - $rm_amount;
+        
         if ($new_amount == 0){
             // daca am scos toate itemele din cos le eliminam complet
-            Sold_Item::deleteSold_Item($item_id, $purchase);
+            
+            Sold_Item::deleteSold_Item($item_id, $purchase["purchase_id"]);
+            $sold_items = Sold_Item::getPurchaseSold_Items($purchase["purchase_id"]);
+            // trebuie recalculata suma itemelor si creditele pentru purchase
+            $new_total = self::sum_recalc($sold_items);
+            $new_credits = (int)($new_total/3);
+            
+            Purchase::updatePurchase($purchase["purchase_id"], $new_total, $new_credits);
+            $_SESSION["create_purchase"]["purchase"]["total_price"] = $new_total = self::sum_recalc($sold_items);
+            $_SESSION["create_purchase"]["purchase"]["purchase_credits"] = $new_credits;
+            
             header("Location: " . $return_url);
             return;
         }
         // daca am scos doar o parte din iteme le decrementam "amount"
+        
         Sold_Item::updateSold_Item($item_id, $purchase["purchase_id"], $new_amount);
+
+        // trebuie recalculata suma itemelor si creditele pentru purchase
+        $sold_items = Sold_Item::getPurchaseSold_Items($purchase["purchase_id"]);
+        $new_total = self::sum_recalc($sold_items);
+        $new_credits = (int)($new_total/3);
+
+        Purchase::updatePurchase($purchase["purchase_id"], $new_total, $new_credits);
+        $_SESSION["create_purchase"]["purchase"]["total_price"] = $new_total;
+        $_SESSION["create_purchase"]["purchase"]["purchase_credits"] = $new_credits;
+
         header("Location: " . $return_url);
         return;
     }

@@ -78,15 +78,14 @@ INSERT INTO user_roles (role_id, name) VALUES (3, 'guest');
 INSERT INTO items (item_name, price) VALUES ('store_credit', -0.05);
 
 -- insert the default users
-INSERT INTO users (first_name, last_name, email, password, role_id, credits) VALUES ('admin', 'admin', 'admin@admin.com', 'admin', 1, 0);
-INSERT INTO users (first_name, last_name, email, password, role_id, credits) VALUES ('user', 'user', 'user@user.com', 'user', 2, 0);
+INSERT INTO users (first_name, last_name, email, password, role_id, credits) VALUES ('admin', 'admin', 'admin@admin.com', '$2y$10$FPpZOxSyMVG/OxSQ8i4vae1qVTMebaZqyeZZxRacDrQuei2Mp30gO', 1, 0);
 
 -- insert some items
 INSERT INTO items (item_name, price, stock, expiration_date) VALUES ('Lapte Din Inima Ardealului 3.5% Grasime 1L - Napolact', 8.49, 90, '2024-11-24');
 INSERT INTO items (item_name, price, stock, expiration_date) VALUES ('Bomboane 400g - Toffifee', 33.06, 25, '2025-02-20');
 INSERT INTO items (item_name, price, stock, expiration_date) VALUES ('Bautura Racoritoare Necaronatata Cu Piure De Mere Verzi 1L - Tymbark', 33.06, 30, '2026-12-13');
 INSERT INTO items (item_name, price, stock, expiration_date) VALUES ('Iaurt De Casa 400g - Diami', 33.06, 900, '2025-11-21');
-INSERT INTO items (item_name, price, stock, expiration_date) VALUES ('Aripi De Pui Secționate 630g - Cocorico', 33.06, 45, '2024-11-23');
+INSERT INTO items (item_name, price, stock, expiration_date) VALUES ('Aripi De Pui Sectionate 630g - Cocorico', 33.06, 45, '2024-11-23');
 
 -- insert the migration
 INSERT INTO migrations (name) VALUES ('create_db_1');

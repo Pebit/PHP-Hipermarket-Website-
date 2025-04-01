@@ -52,6 +52,20 @@ class User {
             ":email" => $email
         ));
     }
+    public static function updateUserPassword($user_id, $password) {
+        global $pdo;
+
+        $sql = "UPDATE users
+                SET password = :password
+                WHERE user_id = :user_id";
+        $stmt = $pdo->prepare($sql);
+        
+        $stmt->execute(array(
+            ":user_id" => $user_id,
+            ":password" => $password
+        ));
+    }
+    
     public static function deleteUser($user_id) {
         global $pdo;
 

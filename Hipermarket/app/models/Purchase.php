@@ -5,7 +5,8 @@ class Purchase {
         try {
             $sql = "SELECT *
                     FROM purchases
-                    WHERE user_id = :user_id";
+                    WHERE user_id = :user_id
+                    ORDER BY purchase_date DESC, status ASC";
             $stmt = $pdo->prepare($sql);
             $stmt->execute(array(":user_id" => $user_id));
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -19,7 +20,8 @@ class Purchase {
         global $pdo;
         try {
             $sql = "SELECT * 
-                    FROM purchases";
+                    FROM purchases
+                    ORDER BY purchase_date DESC, status ASC";
             $stmt = $pdo->query($sql);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e){

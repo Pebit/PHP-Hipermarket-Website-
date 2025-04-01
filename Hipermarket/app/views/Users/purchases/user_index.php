@@ -11,14 +11,14 @@
     <tr>
         <th>Date</th>
         <th>Money Spent</th>
-        <th>Credits Gained</th>
+        <!-- <th>Credits Gained</th> -->
         <th>Transaction Status</th>
     </tr>
     <?php foreach ($purchases as $purchase) : ?>
         <tr>
             <td><?= $purchase["purchase_date"] ?></td>
             <td><?= $purchase["total_price"] ?> lei</td>
-            <td><?= $purchase["purchase_credits"] ?> </td>
+            <!-- <td><?= $purchase["purchase_credits"] ?> </td> -->
             <td><?php if($purchase["status"] == 0):?>pending<?php else:?>finished<?php endif;?></td>
         </tr>
     <?php endforeach; ?>

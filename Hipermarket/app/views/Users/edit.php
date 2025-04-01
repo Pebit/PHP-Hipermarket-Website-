@@ -33,6 +33,11 @@
                 echo $_SESSION["edit_user"]['role_error'];
             ?>
         </p>
+        <p style="color:green;">
+            <?php if (isset($_SESSION['success'])){
+                echo($_SESSION['success']);
+                unset($_SESSION['success']);}?>
+        </p>
         <input type="submit" value=Update style="background:green">
     </form>
     <a href="index" style="color:white"><div><button style="background:orange">Back</div></a>

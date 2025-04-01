@@ -9,6 +9,7 @@ $routes = [
     "Site%20Hipermarket(1)/Hipermarket/users/index" => ["UserController", "index"],
     "Site%20Hipermarket(1)/Hipermarket/users/show" => ["UserController", "show"],
     "Site%20Hipermarket(1)/Hipermarket/users/edit" => ["UserController", "edit"],
+    "Site%20Hipermarket(1)/Hipermarket/users/edit_password" => ["UserController", "edit_password"],
     "Site%20Hipermarket(1)/Hipermarket/users/create" => ["UserController", "create"],
     "Site%20Hipermarket(1)/Hipermarket/users/delete" => ["UserController", "delete"],
 
@@ -21,7 +22,9 @@ $routes = [
     "Site%20Hipermarket(1)/Hipermarket/auth/login" => ["AuthController", "login"],
     "Site%20Hipermarket(1)/Hipermarket/auth/guest_login" => ["AuthController", "guest_login"],
     "Site%20Hipermarket(1)/Hipermarket/auth/logout" => ["AuthController", "logout"],
+    "Site%20Hipermarket(1)/Hipermarket/auth/forgot_password" => ["AuthController", "forgot_password"],
     "Site%20Hipermarket(1)/Hipermarket" => ["AuthController", "landing_page"]
+    
 ];
 
 class Router {

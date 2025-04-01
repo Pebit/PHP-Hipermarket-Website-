@@ -17,9 +17,10 @@
         <p><label for="email">Email</label>
             <input type="text" name="email" id="email">
         </p>
-        <p><label for="password">Password</label>
+        <p style="border-bottom: 0; padding-bottom: 0;"><label for="password">Password</label>
             <input type="password" name="password" id="password">
         </p>
+        <p><a href="forgot_password">forgot password?</a></p>
         <input type="submit" value="Login">
     </form>
 </body>

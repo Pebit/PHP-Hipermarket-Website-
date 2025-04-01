@@ -37,7 +37,7 @@
     <?php endforeach; ?>
 </table>
 <h2>Total: <?= $total_price ?> lei<br>
-Credits Aquired: <?= $credits ?></h2>
+<!-- Credits Aquired: <?= $credits ?></h2> -->
 <?php if(isset($_GET["error"])):?>
                 <p style="color: red;"><?= $_GET["error"]; ?></p>
 <?php endif; ?>

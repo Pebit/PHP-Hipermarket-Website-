@@ -17,7 +17,7 @@
         <th>First Name</th>
         <th>Last Name</th>
         <th>Email</th>
-        <th>Store Credits</th>
+        <!-- <th>Store Credits</th> -->
         <th>Action</th>
     </tr>
     <?php foreach ($users as $user) : ?>
@@ -25,7 +25,7 @@
             <td><?= $user["first_name"] ?></td>
             <td><?= $user["last_name"] ?></td>
             <td><?= $user["email"] ?></td>
-            <td><?= $user["credits"]?></td>
+            <!-- <td><?= $user["credits"]?></td> -->
             <td>
                 <?php if(isset($_SESSION["request_user"]) && $_SESSION["request_user"]["role_id"] == 1): ?>
                     <form id="purchaseForm_<?= $user["user_id"] ?>" action="/Site%20Hipermarket(1)/Hipermarket/purchases/index?user_id=<?= $user["user_id"] ?>" method="POST" style="display:inline;">

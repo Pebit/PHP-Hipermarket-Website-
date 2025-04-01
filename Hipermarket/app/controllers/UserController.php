@@ -64,7 +64,7 @@ class UserController{
     }
 
     public static function edit(){
-        // daca se apasa pe edit in fila html/php si userul conectat nu are permisiuni atunci va fi trimis pe pagina 404 
+        // preventing people without the permission to edit users from doing so
         if (!isset($_SESSION["request_user"]) || !User::hasPermission($_SESSION["request_user"]["user_id"], "update_user")){
             $_SESSION["error"]= "Invalid permissions";
             require_once "app/views/404.php";
@@ -73,7 +73,7 @@ class UserController{
 
         $user_id = $_GET['user_id'] ? $_GET['user_id'] : $_POST['user_id'];
 
-        // daca userul incearca sa editeze un alt user inafara de el insusi va fi trimis dinnou pe pagina 404 (exceptie adiminii).
+        // preventing non-admins from editing other users
         $role = UserRole::getRole($_SESSION["request_user"]["role_id"]);
         if ($role["name"] != "admin" && $user_id != $_SESSION["request_user"]["user_id"]){
                 $_SESSION["error"]= "Invalid permissions";
@@ -116,9 +116,55 @@ class UserController{
             require_once "app/views/users/edit.php";
         }
     }
+    public static function edit_password(){
+        // preventing people without 
+        if (!isset($_SESSION['request_user']) || !User::hasPermission($_SESSION['request_user']['user_id'], "update_user")){
+            $_SESSION['error']= "Invalid permissions";
+            require_once "app/views/404.php";
+            return;
+        }
+
+        $user_id = $_GET['user_id'] ? $_GET['user_id'] : $_SESSION["request_user"]["user_id"];
+
+        // if the user tries to edit another user's password besides themselves, they will be redirected again to the 404 page
+        if ($user_id != $_SESSION["request_user"]["user_id"]){
+                $_SESSION['error']= "Invalid permissions";
+                require_once "app/views/404.php";
+                return;
+            }
+        
+        $user = User::getUser($user_id);
+
+        if (!$user) {
+            $_SESSION['error'] = "User not found";
+            require_once "app/views/404.php";
+            return;
+        }
+        if(isset($_POST['password'])){
+            // password validation
+            if (strlen($_POST['password']) < 8) {
+                $_SESSION['password_error'] = 'Password must be at least 8 characters';
+                header("Location: edit_password?user_id=$user_id");
+                return;
+            }
+
+            User::updateUserPassword(
+                $user_id,
+                password_hash($_POST["password"], PASSWORD_DEFAULT)
+            );
+
+            $_SESSION['success'] = 'Password updated for '.$user["first_name"]." ".$user["last_name"];
+            header("Location: edit_password?user_id=$user_id");
+            return;
+        }
+        else{
+            require_once "app/views/users/edit_password.php";
+        }
+    }
+    
 
     public static function delete() {
-        // daca userul nu este loggat sau nu are permisiunea de a sterge, atunci 404
+        // preventing people without the permission to delete users from doing so
         if (!isset($_SESSION["request_user"]) || 
             !User::hasPermission($_SESSION["request_user"]["user_id"], "delete_user")
         ){
@@ -128,16 +174,27 @@ class UserController{
         }
 
         $user_id = $_GET["user_id"];
-
-        if($_SESSION["request_user"]["role_id"] != 1 && $_SESSION["request_user"]["user_id"] != $user_id){
+        
+        // preventing non-admins from deleting other users
+        if($_SESSION["request_user"]["role_id"] != 1 && $_SESSION["request_user"]["user_id"] != $user_id ){
             $_SESSION["error"]= "Invalid permissions";
             require_once "app/views/404.php";
             return;
         }
+        // if the user deletes themselves:
+        // log them out (unset session user) and redirect them to landing page
+        if($_SESSION["request_user"]["user_id"] == $user_id){
+            User::deleteUser($user_id);
+            unset($_SESSION["request_user"]);
+            header("Location: http://localhost/Site%20Hipermarket(1)/Hipermarket");
+        }
+        else{
+            User::deleteUser($user_id);
+            header("Location: index");
+        }
+        
 
-        User::deleteUser($user_id);
-
-        header("Location: index");
+        
         return;
     }
     public static function create() {

@@ -51,10 +51,9 @@ class PurchaseController{
 
     public static function show(){
         if(isset($_SESSION["create_purchase"])){
-            // luam total price, purchase credits si le punem in variabile conveniente
             $total_price = $_SESSION["create_purchase"]["purchase"]["total_price"];
             $credits = $_SESSION["create_purchase"]["purchase"]["purchase_credits"];
-            // luam sold_items si itemele asociate lor pentru 
+            // sold_items and their associated items "on the shelves" 
             $sold_items = Sold_Item::getPurchaseSold_Items($_SESSION["create_purchase"]["purchase"]["purchase_id"]);
             $items = []; 
 
@@ -86,17 +85,17 @@ class PurchaseController{
             return;
         }
         if(isset($_SESSION["create_purchase"])){
-            // daca deja este creat un purchase in sesiunea curenta:
+            // if a purchase already exists in the current session:
             if($POST_amount != 0){
-                // daca avem itemul:
+                // if there's at least 1 item:
                 $item = Item::getItem($POST_item_id);
-                $purchase = $_SESSION["create_purchase"]["purchase"]; // creat doar pentru a face codul mai citibil
-                $item_price = $POST_amount * $item["price"]; // creat doar pentru a face codul mai citibil x 2
-
+                $purchase = $_SESSION["create_purchase"]["purchase"]; 
+                $item_price = $POST_amount * $item["price"]; 
+                
                 $purchase["total_price"] = $purchase["total_price"] + $item_price;
                 $purchase["purchase_credits"] = (int)($purchase["total_price"] / 3);
 
-                // updatam $_SESSION pentru a ramane relevant in viitoare "$purchase = $_SESSION["create_purchase"]["purchase"]"
+                // update $_SESSION variables
                 $_SESSION["create_purchase"]["purchase"] = [
                     "purchase_id" => $purchase["purchase_id"],
                     "user_id" => $purchase["user_id"],
@@ -106,13 +105,13 @@ class PurchaseController{
                     "status" => $purchase["status"]
                 ];
 
-                // updatam tabelele "purchases" si cream itemul de tip "sold_items" asociat tranzactiei
+                // update the "purchases" table and create the "sold_items" item associated with the transaction
                 Purchase::updatePurchase(
                     $purchase["purchase_id"],
                     $purchase["total_price"], 
                     $purchase["purchase_credits"]);
 
-                // inainte de a crea itemul, daca deja avem un item identic asociat tranzactiei doar il updatam
+                // if we already have an identical sold item, we only update the amount
                 $sold_items = Sold_Item::getPurchaseSold_Items($purchase["purchase_id"]);
                 var_dump($sold_items);
                 echo($purchase["purchase_id"]);
@@ -133,18 +132,18 @@ class PurchaseController{
         }
 
         if(!isset($_SESSION["create_purchase"])){
-            // cand nu avem purchase creat:
+            // when there's no purchase:
             if(isset($_SESSION["request_user"])){
-                // daca userul este logged in:
+                // if the user is logged in:
                 if($POST_amount != 0){
-                    // daca avem item de adaugat odata cu crearea:
+                    // if there's at least one item
 
                     $user_id = $_SESSION["request_user"]["user_id"];
                     $item = Item::getItem($POST_item_id);
                     $item_price = $POST_amount * $item["price"];
                     $credits = (int) ($item_price / 3);
                     
-                    // se creaza purchase in baza de date
+                    // purchase created in the database
                     Purchase::createPurchase(
                         $user_id, 
                         $item_price,
@@ -158,7 +157,7 @@ class PurchaseController{
                         require_once "app/views/404.php";
                         return;
                     }
-                    // se creaza purchase in session
+                    // create the purchase session variables
                     $_SESSION["create_purchase"]["purchase"] = [
                         "purchase_id" => $purchase["purchase_id"],
                         "user_id" => $purchase["user_id"],
@@ -167,7 +166,7 @@ class PurchaseController{
                         "purchase_date" => $purchase["purchase_date"],
                         "status" => $purchase["status"]
                     ];
-                    // se creaza Sold_Item (copie a itemului adugat in cos, atribuita purchaseului)
+                    // we create the sold item using the current item and purchase
                     Sold_Item::createSold_Item(
                         $item["item_id"], 
                         $purchase["purchase_id"], 
@@ -175,7 +174,7 @@ class PurchaseController{
 
                     header("Location: " . $return_url);
                 } else {
-                    // daca nu avem item de adaugat, se creaza doar un purchase blank
+                    // if there's no item, then we only create an empty purchase
                     $user_id = $_SESSION["request_user"]["user_id"];
                     Purchase::createPurchase($user_id, 0,0,0);
                     $purchase = Purchase::getUserLastPurchase($user_id);
@@ -191,38 +190,36 @@ class PurchaseController{
                     header("Location: " . $return_url);
                 }
             } else {
-                // daca nu avem nici user => eroare
+                // if there's no user => error
                 $_SESSION['error'] = "User not logged in";
                 require_once "app/views/404.php";
             }
         }
     }
 
-    // functii ajutatoare
+    // helper functions
     public static function sold_item_validation($sold_item, &$item_id_errors){
-
-        // cautam itemul asociat sold_item-ului
+        
         $item = Item::getItem($sold_item["item_id"]);
         
-        
         if(!$item){
-            // in cazul in care itemul a fost sters din baza de date cat timp dadeam browse atunci semnalam problema.
-            // (nu sunt sigur daca am problema aceasta s-ar putea sa am deja on delete cascade si sa nu fie problema)
-            $item_id_errors["missing_error"][] = $item["item_name"]; 
+            // if the item was erased from the database while browsing => error
+            $item_id_errors["missing_error"] = $item["item_name"]; 
             return 0;
         }
         if ($item["stock"] < 0){
-            // in cazul in care am ramas pe minus la iteme le punem inapoi in raft si semnalam eroarea.
+            // if we're out of stock, we have to tell the user 
+            // the maximum amount of items available for them
             $available_amount = $item["stock"] + $sold_item["amount"]; 
-            // daca am ramas cu -1 iteme si am cumparat 3 iteme atunci putem maxim -1 + 3 = 2 iteme
             $item_id_errors["amount_error"][] = $available_amount."x ".$item["item_name"];
             return 0;
         }
         return 1;
     }
+    
+    // total sum recalculation using list of given sold_items
     public static function sum_recalc($sold_items){
-        // in cazul in care unele iteme au fost sterse din baza de date trebuie reinsumate toate sold_itemele apartinand 
-        // tranzactiei pentru asigurarea platii sumei corecte (nu vrem sa facem frauda)
+        
         $sum = 0;
         foreach($sold_items as $sold_item){
             $item = Item::getItem($sold_item["item_id"]);
@@ -230,18 +227,20 @@ class PurchaseController{
         }
         return $sum;
     }
+
+    // we modify the store's stock of that sold_item (grab)
     public static function grab_from_shelf($sold_item){
-        // cautam itemul asociat sold_item-ului
         $item = Item::getItem($sold_item["item_id"]);
         if (!$item){
             return;
         }
-        // schimbam valoarea itemului in stock
+        
         $new_amount = $item["stock"] - $sold_item["amount"];
         Item::updateItem($item["item_id"], $item["item_name"], $item["expiration_date"], $item["price"], 
             $new_amount);
     }
 
+    // we modify the store's stock of that sold_item (put back)
     public static function put_back_on_shelf($sold_item){
         $item = Item::getItem($sold_item["item_id"]);
         if (!$item){
@@ -252,6 +251,7 @@ class PurchaseController{
             $old_amount);
     }
     
+    // function for finishing a transaction
     public static function finish(){
         $return_url = $_POST["return_url"];
         if (isset($_SESSION["create_purchase"])){
@@ -263,17 +263,17 @@ class PurchaseController{
                 header("Location: " . $return_url ."&error=".$errors);
                 return;
             }
-            //decrementam ammountul fiecaruia din baza de date
+            // removing the items bought from the database
             foreach ($sold_items as $sold_item){
                 self::grab_from_shelf($sold_item);
             }
             
-            // validarea datelor tranzactiei 
+            // validating the transaction data
             $item_id_errors = [];
             foreach ($sold_items as $sold_item){
                 self::sold_item_validation($sold_item, $item_id_errors);
             }
-            
+            // if errors are found => error message telling the customer what to do to fix the issue
             if (isset($item_id_errors["missing_error"]))
             {
                 $errors = "the following items are missing from the database: ";
@@ -288,6 +288,7 @@ class PurchaseController{
                     $errors = $errors.$error." ";
                 }
             }
+            // re-adding each item back into the database
             if(isset($item_id_errors["amount_error"]) || isset($item_id_errors["missing_error"])){
                 foreach ($sold_items as $sold_item){
                     self::put_back_on_shelf($sold_item);
@@ -295,9 +296,9 @@ class PurchaseController{
                 header("Location: " . $return_url ."&error=".$errors);
                 return;
             }
-            // verificam costul final recalculand suma tuturor itemelor apartinand tranzactiei
+            // we verify the sum just in case
             $new_sum = self::sum_recalc($sold_items);
-            // alta suma => alte credite
+            // modified sum -> modified credits
             $new_credits = (int) ($new_sum / 3);
             if($purchase["total_price"] != $new_sum){
                 $purchase["totlal_price"] = $new_sum;
@@ -308,14 +309,14 @@ class PurchaseController{
                 $purchase["purchase_credits"]);
             }
 
-            // itemele au fost actualizate in baza de date => terminam tranzactia (status = 1 purchase_date = [<data curenta>])
+            // everything good => finish purchase (status = 1, purchase_date = <current date>)
             Purchase::finishPurchase($purchase["purchase_id"]);
-            // eliminam purchaseul din session pentru a face loc pentru alt posibil purchase
+            // making room for a possible new purchase
             unset($_SESSION["create_purchase"]);
             header("Location: /Site%20Hipermarket(1)/Hipermarket");
         }
         else{
-            // daca nu avem purchase => eroare
+            // if there's no purchase => error (normal user won't get here)
             $_SESSION['error'] = "no purchase available";
             require_once "app/views/404.php";
         }
@@ -326,10 +327,10 @@ class PurchaseController{
         $c_amount = isset($_POST["current_amount"]) ? (int)($_POST["current_amount"]) : 0;
         $rm_amount = isset($_POST["remove_amount"]) ? (int)($_POST["remove_amount"]) : 0;
         
-        // gestionarea erorilor
+        // error management
         if ($c_amount == 0 || $rm_amount == 0 || $c_amount < $rm_amount) {
             $_SESSION["cart_error"] = ($c_amount == 0) ? 
-                "Failed getting amount in cart (shows 0 items)" : 
+                "Failed getting item amount in cart (0 items)" : 
                 (($c_amount < $rm_amount) ? "Amount chosen to be removed must be smaller than current amount" : 
                 "Amount chosen to be removed must be bigger than 0");
         
@@ -343,11 +344,11 @@ class PurchaseController{
         $new_amount = $c_amount - $rm_amount;
         
         if ($new_amount == 0){
-            // daca am scos toate itemele din cos le eliminam complet
+            // if all current item amount is removed then we eliminate the item from the list
             
             Sold_Item::deleteSold_Item($item_id, $purchase["purchase_id"]);
             $sold_items = Sold_Item::getPurchaseSold_Items($purchase["purchase_id"]);
-            // trebuie recalculata suma itemelor si creditele pentru purchase
+            // we re-evaluate the sum and credits after removing the item
             $new_total = self::sum_recalc($sold_items);
             $new_credits = (int)($new_total/3);
             
@@ -358,11 +359,11 @@ class PurchaseController{
             header("Location: " . $return_url);
             return;
         }
-        // daca am scos doar o parte din iteme le decrementam "amount"
+        // if only a portion of the amount was removed we just modify "amount"
         
         Sold_Item::updateSold_Item($item_id, $purchase["purchase_id"], $new_amount);
 
-        // trebuie recalculata suma itemelor si creditele pentru purchase
+        // re-evaluate the sum and credits after removing the item
         $sold_items = Sold_Item::getPurchaseSold_Items($purchase["purchase_id"]);
         $new_total = self::sum_recalc($sold_items);
         $new_credits = (int)($new_total/3);
